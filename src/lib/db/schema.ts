@@ -1,13 +1,32 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
-// Categories Table
+export type Product = {
+  id: number;
+  title: string;
+  description: string | null;
+  articleNumber: string;
+  listPrice: number;
+  price: number;
+  price50: number;
+  price100: number;
+  categoryId: number;
+  createdAt: string; // Drizzle stores timestamps as strings
+};
+
+export type ProductImage = {
+  id: number;
+  productId: number;
+  imageUrl: string;
+};
+
+// ✅ Categories Table
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   displayOrder: integer("display_order").notNull(),
 });
 
-// Products Table
+// ✅ Products Table
 export const products = sqliteTable("products", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
@@ -20,7 +39,16 @@ export const products = sqliteTable("products", {
   categoryId: integer("category_id")
     .notNull()
     .references(() => categories.id),
-  imageUrl: text("image_url"),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+});
+
+// ✅ Product Images Table
+export const productImages = sqliteTable("product_images", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  imageUrl: text("image_url").notNull(), // ✅ Stores local path or Cloudinary URL
 });
 
 // Users Table (Authentication)
