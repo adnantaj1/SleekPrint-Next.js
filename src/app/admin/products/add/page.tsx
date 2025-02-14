@@ -99,7 +99,7 @@ export default function AddProductPage() {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-gray-700"
             required
           />
         </div>
@@ -116,7 +116,7 @@ export default function AddProductPage() {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-gray-700"
             rows={4}
             required
           />
@@ -135,7 +135,7 @@ export default function AddProductPage() {
             id="articleNumber"
             value={articleNumber}
             onChange={(e) => setArticleNumber(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-gray-700"
             required
           />
         </div>
@@ -153,7 +153,7 @@ export default function AddProductPage() {
             id="price"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-gray-700"
             required
           />
         </div>
@@ -170,10 +170,12 @@ export default function AddProductPage() {
             id="category"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-gray-700"
             required
           >
-            <option value="">Select a category</option>
+            <option value="" className="text-gray-700">
+              Select a category
+            </option>
             <option value="1">T-Shirts</option>
             <option value="2">Mugs</option>
             <option value="3">Bags</option>

@@ -1,8 +1,8 @@
-"use client"; // Client Component
+"use client";
 import { useState, useEffect } from "react";
 import { Product } from "@/lib/db/schema";
-import Image from "next/image";
 import Link from "next/link";
+import ImageSlider from "../ui/ImageSlider";
 
 type ProductCardProps = {
   product: Product;
@@ -13,7 +13,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch images for this product
     const fetchImages = async () => {
       try {
         const res = await fetch(`/api/products/${product.id}/images`);
@@ -32,28 +31,20 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      {/* ✅ Image Section */}
+      {/* ✅ Image Slider Section */}
       <div className="relative w-full h-48">
         {isLoading ? (
           <div className="w-full h-full bg-gray-200 animate-pulse"></div>
-        ) : imageUrls.length > 0 ? (
-          <Image
-            src={imageUrls[0]} // Show first image
-            alt={product.title}
-            width={300}
-            height={200}
-            className="object-cover w-full h-full"
-          />
         ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-            No Image
-          </div>
+          <ImageSlider images={imageUrls} />
         )}
       </div>
 
       {/* ✅ Product Details */}
       <div className="p-4">
-        <h2 className="text-xl font-semibold mb-2">{product.title}</h2>
+        <h2 className="text-xl font-semibold mb-2 text-gray-700">
+          {product.title}
+        </h2>
         <p className="text-gray-700">${product.price.toFixed(2)}</p>
 
         {/* ✅ View Details Button */}

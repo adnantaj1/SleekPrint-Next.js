@@ -7,8 +7,7 @@ export default async function ProductDetailPage({
 }: {
   params: { id: string };
 }) {
-  // ✅ Ensure `params` exists
-  // ✅ Ensure `params.id` is a valid number
+  // ✅ Ensure `params.id` exists and is valid
   const productId = Number(id);
   if (isNaN(productId)) return notFound();
 
@@ -19,13 +18,19 @@ export default async function ProductDetailPage({
   // ✅ Fetch product images
   const images = await ProductService.getProductImages(productId);
 
-  // Pass data to the client component
-  return (
-    <ProductDetailClient
-      product={{
-        ...product,
-        images,
-      }}
-    />
-  );
+  // ✅ Construct `productWithImages` that matches `ProductDetailClientProps`
+  const productWithImages = {
+    id: product.id,
+    title: product.title,
+    description: product.description || "", // Ensure it's not `null`
+    price: product.price,
+    articleNumber: product.articleNumber,
+    category: product.category ? { name: product.category.name } : undefined, // Ensure category matches expected type
+    images: images.map((img) => ({
+      id: img.id,
+      imageUrl: img.imageUrl,
+    })), // Ensure images array is properly formatted
+  };
+
+  return <ProductDetailClient product={productWithImages} />;
 }

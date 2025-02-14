@@ -47,7 +47,7 @@ export default function ProductList({ products }: ProductListProps) {
             id="category"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="border p-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border p-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
           >
             <option value="all">All Categories</option>
             <option value="1">T-Shirts</option>
@@ -56,7 +56,7 @@ export default function ProductList({ products }: ProductListProps) {
           </select>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 text-gray-700">
           <label htmlFor="sort" className="text-sm font-medium text-gray-700">
             Sort By:
           </label>
