@@ -1,15 +1,13 @@
-import ProductList from "@/app/components/admin/product/ProductList";
+import ProductList from "@/app/components/products/ProductList";
+import { ProductService } from "@/lib/services/ProductService"; // ✅ Call service directly
 
 export default async function AdminProductsPage() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products`, {
-    cache: "no-store",
-  });
+  const products = await ProductService.getAllProducts(); // ✅ No need for API
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
-  }
-
-  const products = await res.json();
-
-  return <ProductList products={products} />;
+  return (
+    <main className="max-w-7xl mx-auto py-12">
+      <h1 className="text-3xl font-bold mb-6 text-center">Manage Products</h1>
+      <ProductList products={products} />
+    </main>
+  );
 }

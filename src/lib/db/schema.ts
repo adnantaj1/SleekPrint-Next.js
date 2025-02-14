@@ -1,23 +1,10 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-export type Product = {
-  id: number;
-  title: string;
-  description: string | null;
-  articleNumber: string;
-  listPrice: number;
-  price: number;
-  price50: number;
-  price100: number;
-  categoryId: number;
-  createdAt: string; // Drizzle stores timestamps as strings
-};
+export type ProductInput = InferInsertModel<typeof products>;
+export type Product = InferSelectModel<typeof products>;
 
-export type ProductImage = {
-  id: number;
-  productId: number;
-  imageUrl: string;
-};
+export type ProductImage = InferInsertModel<typeof productImages>;
 
 // ✅ Categories Table
 export const categories = sqliteTable("categories", {
@@ -32,23 +19,21 @@ export const products = sqliteTable("products", {
   title: text("title").notNull(),
   description: text("description"),
   articleNumber: text("article_number").notNull().unique(),
-  listPrice: integer("list_price").notNull(),
   price: integer("price").notNull(),
-  price50: integer("price_50").notNull(),
-  price100: integer("price_100").notNull(),
   categoryId: integer("category_id")
     .notNull()
     .references(() => categories.id),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
-// ✅ Product Images Table
+// ✅ Products-Image Table
 export const productImages = sqliteTable("product_images", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   productId: integer("product_id")
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
-  imageUrl: text("image_url").notNull(), // ✅ Stores local path or Cloudinary URL
+  imageUrl: text("image_url").notNull(),
+  uploadedAt: text("uploaded_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Users Table (Authentication)

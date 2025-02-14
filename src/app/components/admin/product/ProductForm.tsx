@@ -25,7 +25,8 @@ export default function ProductForm({
     categoryId: "",
   });
 
-  const [files, setFiles] = useState<File[]>([]); // ✅ Store product images
+  const [files, setFiles] = useState<File[]>([]); // ✅ New images selected
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]); // ✅ Already uploaded images
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -57,6 +58,13 @@ export default function ProductForm({
         price100: editingProduct.price100.toString(),
         categoryId: editingProduct.categoryId.toString(),
       });
+
+      // ✅ Fetch existing product images
+      fetch(`/api/products/${editingProduct.id}/images`)
+        .then((res) => res.json())
+        .then((data) => setUploadedImages(data.imageUrls || []));
+    } else {
+      resetForm();
     }
   }, [editingProduct]);
 
@@ -74,48 +82,51 @@ export default function ProductForm({
     setFiles(Array.from(e.target.files || []));
   };
 
+  // ✅ Handle Image Removal
+  const handleRemoveImage = async (imageUrl: string) => {
+    const res = await fetch("/api/products/delete-image", {
+      method: "POST",
+      body: JSON.stringify({ imageUrl }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      setUploadedImages((prev) => prev.filter((img) => img !== imageUrl));
+    } else {
+      alert("Failed to delete image");
+    }
+  };
+
+  // ✅ Reset Form Function
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      articleNumber: "",
+      listPrice: "",
+      price: "",
+      price50: "",
+      price100: "",
+      categoryId: "",
+    });
+    setFiles([]);
+    setUploadedImages([]);
+    setEditingProduct(null);
+  };
+
   // ✅ Handle Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setAlert(null);
 
-    let uploadedImageUrls: string[] = [];
-
-    // ✅ First, Upload Images to `/api/upload`
-    if (files.length > 0) {
-      const imageFormData = new FormData();
-      files.forEach((file) => imageFormData.append("files", file));
-
-      console.log("📡 Uploading images to /api/upload...");
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: imageFormData,
-      });
-
-      if (uploadRes.ok) {
-        const uploadData = await uploadRes.json();
-        uploadedImageUrls = uploadData.imageUrls; // ✅ Store image URLs
-        console.log("✅ Uploaded Images:", uploadedImageUrls);
-      } else {
-        console.error("❌ Image upload failed!");
-        setAlert({ message: "❌ Failed to upload images!", type: "error" });
-        setLoading(false);
-        return;
-      }
-    }
-
-    // ✅ Then, Send Product Data to `/api/products`
     const productFormData = new FormData();
     Object.keys(formData).forEach((key) => {
       productFormData.append(key, formData[key as keyof typeof formData]);
     });
 
-    uploadedImageUrls.forEach((url) =>
-      productFormData.append("imageUrls", url)
-    );
+    files.forEach((file) => productFormData.append("files", file));
 
-    console.log("📡 Saving product with images:", uploadedImageUrls);
     const res = await fetch("/api/products", {
       method: editingProduct ? "PUT" : "POST",
       body: productFormData,
@@ -131,18 +142,7 @@ export default function ProductForm({
         type: "success",
       });
 
-      setFormData({
-        title: "",
-        description: "",
-        articleNumber: "",
-        listPrice: "",
-        price: "",
-        price50: "",
-        price100: "",
-        categoryId: "",
-      });
-      setFiles([]);
-      setEditingProduct(null);
+      resetForm();
       refresh();
     } else {
       setAlert({ message: "❌ Failed to save product!", type: "error" });
@@ -158,6 +158,7 @@ export default function ProductForm({
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 text-gray-800 max-w-md mx-auto"
       >
+        {/* ✅ Input Fields */}
         <input
           type="text"
           name="title"
@@ -236,6 +237,28 @@ export default function ProductForm({
           ))}
         </select>
 
+        {/* ✅ Uploaded Images Preview */}
+        {uploadedImages.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {uploadedImages.map((image) => (
+              <div key={image} className="relative">
+                <img
+                  src={image}
+                  alt="Uploaded"
+                  className="w-16 h-16 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(image)}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 text-xs rounded-full"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ✅ Image Upload */}
         <input
           type="file"
@@ -267,11 +290,11 @@ export default function ProductForm({
             : "Add Product"}
         </button>
 
-        {/* ✅ Cancel Button (Only when editing) */}
+        {/* ✅ Cancel Button */}
         {editingProduct && (
           <button
             type="button"
-            onClick={() => setEditingProduct(null)}
+            onClick={resetForm}
             className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
           >
             Cancel

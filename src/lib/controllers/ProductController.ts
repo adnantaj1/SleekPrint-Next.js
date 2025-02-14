@@ -1,103 +1,74 @@
 import { NextResponse } from "next/server";
 import { ProductService } from "@/lib/services/ProductService";
+import { handleError } from "../utils/errorHandler";
+import { parseProductFormData } from "../utils/formDataUtils";
 
 export class ProductController {
-  // ✅ GET all products
   static async getAllProducts() {
     try {
       const products = await ProductService.getAllProducts();
       return NextResponse.json(products);
     } catch (error) {
-      return NextResponse.json(
-        {
-          error: "Failed to fetch products",
-          details: (error as Error).message,
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: handleError(error) }, { status: 500 });
     }
   }
 
-  // ✅ GET a product by ID
-  static async getProductById(id: number) {
+  static async getProductDetails(
+    req: Request,
+    { params }: { params: { id: string } }
+  ) {
     try {
-      const product = await ProductService.getProductById(id);
+      const product = await ProductService.getProductDetails(Number(params.id));
       return NextResponse.json(product);
     } catch (error) {
-      return NextResponse.json(
-        { error: "Failed to fetch product", details: (error as Error).message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: handleError(error) }, { status: 404 });
     }
   }
 
-  // ✅ POST - Add a new product
   static async addProduct(req: Request) {
     try {
       const formData = await req.formData();
-      const title = formData.get("title") as string;
-      const description = formData.get("description") as string;
-      const articleNumber = formData.get("articleNumber") as string;
-      const listPrice = Number(formData.get("listPrice"));
-      const price = Number(formData.get("price"));
-      const price50 = Number(formData.get("price50"));
-      const price100 = Number(formData.get("price100"));
-      const categoryId = Number(formData.get("categoryId"));
-      const files = formData.getAll("files") as File[];
+      const imageUrls = formData.getAll("files").map(String); // ✅ Extract images
+      formData.delete("files");
 
-      if (!title || !price || !categoryId || files.length === 0) {
-        return NextResponse.json(
-          { error: "Missing required fields" },
-          { status: 400 }
-        );
-      }
-
-      // 🔹 Generate image paths (storing locally for now)
-      const savedImageUrls: string[] = [];
-      for (const file of files) {
-        const filePath = `/images/products/${file.name}`;
-        savedImageUrls.push(filePath);
-      }
-
-      // 🔹 Call ProductService to save the product and images
-      const newProduct = await ProductService.addProduct({
-        title,
-        description,
-        articleNumber,
-        listPrice,
-        price,
-        price50,
-        price100,
-        categoryId,
-        imageUrls: savedImageUrls,
-      });
-
-      return NextResponse.json({
-        success: true,
-        productId: newProduct[0].id,
-        imageUrls: savedImageUrls,
-      });
+      const productData = parseProductFormData(formData); // ✅ Use utility function
+      const productId = await ProductService.addProduct(productData, imageUrls);
+      return NextResponse.json({ success: true, productId }, { status: 201 });
     } catch (error) {
-      return NextResponse.json(
-        { error: "Failed to add product", details: (error as Error).message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: handleError(error) }, { status: 500 });
     }
   }
 
-  // ✅ DELETE a product
-  static async deleteProduct(id: number) {
+  static async updateProduct(
+    req: Request,
+    { params }: { params: { id: string } }
+  ) {
     try {
-      await ProductService.deleteProduct(id);
-      return NextResponse.json({ success: true, message: "Product deleted" });
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error: "Failed to delete product",
-          details: (error as Error).message,
-        },
-        { status: 500 }
+      const formData = await req.formData();
+      const imageUrls = formData.getAll("files").map(String); // ✅ Extract images
+      formData.delete("files");
+
+      const productData = parseProductFormData(formData); // ✅ Use utility function
+      await ProductService.updateProduct(
+        Number(params.id),
+        productData,
+        imageUrls
       );
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    }
+  }
+
+  static async deleteProduct(
+    req: Request,
+    { params }: { params: { id: string } }
+  ) {
+    try {
+      await ProductService.deleteProduct(Number(params.id));
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: handleError(error) }, { status: 500 });
     }
   }
 }
