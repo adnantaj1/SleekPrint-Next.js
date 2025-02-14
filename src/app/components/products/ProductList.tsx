@@ -1,4 +1,4 @@
-"use client"; // ✅ Client Component
+"use client"; // Client Component
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { Product } from "@/lib/db/schema";
@@ -9,38 +9,71 @@ type ProductListProps = {
 
 export default function ProductList({ products }: ProductListProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortOption, setSortOption] = useState("name"); // Default sort by name
   const [filteredProducts, setFilteredProducts] = useState(products);
 
   useEffect(() => {
-    if (categoryFilter === "all") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(
-        products.filter(
-          (product) => product.categoryId === Number(categoryFilter)
-        )
+    let filtered = products;
+
+    // Filter by category
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(
+        (product) => product.categoryId === Number(categoryFilter)
       );
     }
-  }, [categoryFilter, products]);
+
+    // Sort products
+    if (sortOption === "name") {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOption === "price") {
+      filtered.sort((a, b) => a.price - b.price);
+    }
+
+    setFilteredProducts(filtered);
+  }, [categoryFilter, sortOption, products]);
 
   return (
-    <div>
-      {/* ✅ Filter by Category */}
-      <div className="flex justify-center mb-6">
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="all">All Categories</option>
-          <option value="1">T-Shirts</option>
-          <option value="2">Mugs</option>
-          <option value="3">Bags</option>
-        </select>
+    <div className="p-6">
+      {/* ✅ Filter and Sort Controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex items-center gap-4">
+          <label
+            htmlFor="category"
+            className="text-sm font-medium text-gray-700"
+          >
+            Category:
+          </label>
+          <select
+            id="category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="border p-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Categories</option>
+            <option value="1">T-Shirts</option>
+            <option value="2">Mugs</option>
+            <option value="3">Bags</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <label htmlFor="sort" className="text-sm font-medium text-gray-700">
+            Sort By:
+          </label>
+          <select
+            id="sort"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="border p-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="name">Name</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
       </div>
 
-      {/* ✅ Display Products in Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {/* ✅ Product Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}

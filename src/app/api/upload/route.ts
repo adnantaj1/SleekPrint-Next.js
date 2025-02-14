@@ -110,3 +110,41 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// ✅ Handle Image Deletion
+export async function DELETE(req: Request) {
+  try {
+    console.log("📡 [API] Delete request received.");
+
+    const { imageUrl } = await req.json();
+    if (!imageUrl) {
+      return NextResponse.json(
+        { error: "Image URL is required" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ Define the file path
+    const filePath = path.join(process.cwd(), "public", imageUrl);
+
+    // ✅ Check if the file exists
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // ✅ Delete the file
+    fs.unlinkSync(filePath);
+    console.log("✅ [API] Successfully deleted file:", filePath);
+
+    return NextResponse.json(
+      { success: true, message: "File deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("🔥 [API] Error deleting file:", error);
+    return NextResponse.json(
+      { error: "Failed to delete file" },
+      { status: 500 }
+    );
+  }
+}

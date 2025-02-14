@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { productImages } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { ProductService } from "@/lib/services/ProductService";
 import { handleError } from "@/lib/utils/errorHandler";
 
 export async function GET(
@@ -9,10 +7,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const images = await db
-      .select()
-      .from(productImages)
-      .where(eq(productImages.productId, Number(params.id)));
+    const productId = Number(params.id);
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: "Invalid product ID" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ Fetch product images using the service layer
+    const images = await ProductService.getProductImages(productId);
 
     return NextResponse.json(images);
   } catch (error) {
