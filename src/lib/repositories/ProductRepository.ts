@@ -67,7 +67,7 @@ export class ProductRepository {
 
   // Update a product
   // ✅ Update a product
-  static async updateProduct(id: number, updatedData: Record<string, any>) {
+  static async updateProduct(id: number, updatedData: Partial<ProductInput>) {
     await db.update(products).set(updatedData).where(eq(products.id, id));
   }
 

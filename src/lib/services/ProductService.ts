@@ -13,12 +13,7 @@ export class ProductService {
     if (!product) throw new Error("Product not found");
 
     const images = await ProductRepository.getProductImages(id);
-
-    return {
-      ...product,
-      images,
-      categoryId: product.category?.id || 0, // ✅ Ensure categoryId exists
-    };
+    return { ...product, images }; // Combine product, category, and images
   }
 
   // ✅ Fetch product images by product ID
@@ -43,15 +38,14 @@ export class ProductService {
   // Update a product
   static async updateProduct(
     id: number,
-    updatedData: Record<string, any>,
-    newImageUrls: string[]
+    productData: ProductInput,
+    imageUrls: string[]
   ) {
-    await ProductRepository.updateProduct(id, updatedData);
-
-    if (newImageUrls.length > 0) {
-      await ProductRepository.addProductImages(id, newImageUrls);
-    }
+    await ProductRepository.updateProduct(id, productData);
+    await ProductRepository.addProductImages(id, imageUrls);
+    return id;
   }
+
   // Delete a product
   static async deleteProduct(id: number) {
     return await ProductRepository.deleteProduct(id);

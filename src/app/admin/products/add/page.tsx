@@ -1,5 +1,5 @@
-"use client"; // Mark as a client component
-import { useState } from "react";
+"use client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Alert from "@/app/components/ui/Alert";
 
@@ -7,15 +7,36 @@ export default function AddProductPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [articleNumber, setArticleNumber] = useState(""); // Add articleNumber
+  const [articleNumber, setArticleNumber] = useState("");
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    []
+  ); // Fetch categories dynamically
   const [images, setImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // ✅ Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories"); // Adjust the endpoint if necessary
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error("Failed to fetch categories");
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // ✅ Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,16 +78,15 @@ export default function AddProductPage() {
         body: JSON.stringify({
           title,
           description,
-          articleNumber, // Include articleNumber
+          articleNumber,
           price: parseFloat(price),
           categoryId: parseInt(categoryId),
-          images: imageUrls, // Only pass the image URLs
+          images: imageUrls,
         }),
       });
 
       if (productResponse.ok) {
         setToast({ message: "Product added successfully", type: "success" });
-        // Redirect to the products list page after a short delay
         setTimeout(() => router.push("/admin/products"), 2000);
       } else {
         throw new Error("Failed to add product");
@@ -158,7 +178,7 @@ export default function AddProductPage() {
           />
         </div>
 
-        {/* ✅ Product Category */}
+        {/* ✅ Product Category (Fetched from API) */}
         <div>
           <label
             htmlFor="category"
@@ -176,9 +196,11 @@ export default function AddProductPage() {
             <option value="" className="text-gray-700">
               Select a category
             </option>
-            <option value="1">T-Shirts</option>
-            <option value="2">Mugs</option>
-            <option value="3">Bags</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -205,7 +227,7 @@ export default function AddProductPage() {
         {previewImages.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {previewImages.map((url, index) => (
-              <div key={url} className="relative group">
+              <div key={index} className="relative group">
                 <img
                   src={url}
                   alt={`Preview ${index + 1}`}

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Alert from "@/app/components/ui/Alert";
 
@@ -35,10 +35,33 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
     { imageId: number; imageUrl: string }[]
   >([]);
 
+  // ✅ Fetch categories dynamically
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    []
+  );
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // ✅ Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (!response.ok) throw new Error("Failed to fetch categories");
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("🔥 Error fetching categories:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // ✅ Handle new image selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,25 +88,46 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
   // ✅ Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ✅ Ensure categoryId is a number
+    const categoryIdNumber = Number(formData.categoryId);
+    if (isNaN(categoryIdNumber)) {
+      setToast({ message: "Invalid category ID", type: "error" });
+      return;
+    }
+
     const updateData = new FormData();
 
-    Object.entries(formData).forEach(([key, value]) =>
-      updateData.append(key, value)
-    );
+    Object.entries(formData).forEach(([key, value]) => {
+      // ✅ Ensure categoryId is sent as a number
+      updateData.append(
+        key,
+        key === "categoryId" ? categoryIdNumber.toString() : value
+      );
+    });
 
     // ✅ Append new images
     newImages.forEach((file) => updateData.append("files", file));
 
-    // ✅ Send update request
-    const res = await fetch(`/api/products/${product.id}`, {
-      method: "PUT",
-      body: updateData,
-    });
+    try {
+      console.log("🛠️ Sending PUT request with:", {
+        formData,
+        categoryIdNumber,
+      });
 
-    if (res.ok) {
+      // ✅ Send update request
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PUT",
+        body: updateData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update product");
+      }
+
       // ✅ After successful update, delete marked images
       for (const img of deletedImages) {
-        await fetch("/api/upload", {
+        const deleteRes = await fetch("/api/upload", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -91,12 +135,20 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
             imageUrl: img.imageUrl,
           }),
         });
+
+        if (!deleteRes.ok) {
+          console.warn("⚠️ Failed to delete image:", img.imageUrl);
+        }
       }
 
       setToast({ message: "Product updated successfully", type: "success" });
+
+      // ✅ Redirect after a short delay
       setTimeout(() => router.push("/admin/products"), 2000);
-    } else {
-      setToast({ message: "Failed to update product", type: "error" });
+    } catch (error) {
+      console.error("🔥 Error updating product:", error);
+      setToast({ message: "Something went wrong!", type: "error" });
+      console.log(error);
     }
   };
 
@@ -120,7 +172,7 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md text-gray-700"
             required
           />
         </div>
@@ -135,7 +187,7 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md text-gray-700"
             rows={4}
           />
         </div>
@@ -151,7 +203,7 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, articleNumber: e.target.value })
             }
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md text-gray-700"
             required
           />
         </div>
@@ -167,27 +219,38 @@ export default function ProductEditForm({ product }: ProductEditFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, price: e.target.value })
             }
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md text-gray-700"
             required
           />
         </div>
 
-        {/* ✅ Product Category */}
+        {/* ✅ Product Category (Fetched from API) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-gray-700"
+          >
             Category
           </label>
           <select
+            id="category"
             value={formData.categoryId}
             onChange={(e) =>
               setFormData({ ...formData, categoryId: e.target.value })
             }
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md text-gray-700"
             required
           >
-            <option value="1">T-Shirts</option>
-            <option value="2">Mugs</option>
-            <option value="3">Bags</option>
+            <option value="">Select a category</option>
+            {loadingCategories ? (
+              <option disabled>Loading categories...</option>
+            ) : (
+              categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
