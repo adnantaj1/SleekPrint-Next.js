@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { IncomingMessage } from "http";
 import { Readable } from "stream";
+import { ProductService } from "@/lib/services/ProductService";
 
 // ✅ Ensure Next.js doesn't parse the request body
 export const config = {
@@ -111,15 +112,16 @@ export async function POST(req: Request) {
   }
 }
 
-// ✅ Handle Image Deletion
+// ✅ DELETE /api/products/images/:id - Delete a product image
 export async function DELETE(req: Request) {
   try {
-    console.log("📡 [API] Delete request received.");
+    console.log("📡 [API] Delete image request received.");
 
-    const { imageUrl } = await req.json();
-    if (!imageUrl) {
+    // ✅ Parse request body
+    const { imageId, imageUrl } = await req.json();
+    if (!imageId || !imageUrl) {
       return NextResponse.json(
-        { error: "Image URL is required" },
+        { error: "Image ID and URL are required" },
         { status: 400 }
       );
     }
@@ -128,22 +130,24 @@ export async function DELETE(req: Request) {
     const filePath = path.join(process.cwd(), "public", imageUrl);
 
     // ✅ Check if the file exists
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // ✅ Delete file
+      console.log("✅ [API] Image file deleted:", filePath);
+    } else {
+      console.warn("⚠️ [API] File not found, skipping:", filePath);
     }
 
-    // ✅ Delete the file
-    fs.unlinkSync(filePath);
-    console.log("✅ [API] Successfully deleted file:", filePath);
+    // ✅ Delete the image record from the database
+    await ProductService.deleteProductImage(imageId);
 
     return NextResponse.json(
-      { success: true, message: "File deleted successfully" },
+      { success: true, message: "Image deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("🔥 [API] Error deleting file:", error);
+    console.error("🔥 [API] Error deleting image:", error);
     return NextResponse.json(
-      { error: "Failed to delete file" },
+      { error: "Failed to delete image" },
       { status: 500 }
     );
   }

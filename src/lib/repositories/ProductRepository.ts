@@ -22,6 +22,7 @@ export class ProductRepository {
         description: products.description,
         price: products.price,
         articleNumber: products.articleNumber,
+        categoryId: products.categoryId, // ✅ Include categoryId
         category: {
           id: categories.id,
           name: categories.name,
@@ -34,12 +35,18 @@ export class ProductRepository {
 
     if (result.length === 0) return null;
 
-    // Format the result to include the category
-    const product = result[0];
-    return {
-      ...product,
-      category: product.category || null, // Ensure category is null if not found
-    };
+    return result[0];
+  }
+
+  //get image by ID
+  static async getProductImageById(imageId: number) {
+    const result = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.id, imageId))
+      .execute();
+
+    return result.length ? result[0] : null;
   }
 
   // Get product images by product ID
@@ -59,11 +66,9 @@ export class ProductRepository {
   }
 
   // Update a product
-  static async updateProduct(id: number, productData: ProductInput) {
-    return await db
-      .update(products)
-      .set(productData)
-      .where(eq(products.id, id));
+  // ✅ Update a product
+  static async updateProduct(id: number, updatedData: Record<string, any>) {
+    await db.update(products).set(updatedData).where(eq(products.id, id));
   }
 
   // Delete a product

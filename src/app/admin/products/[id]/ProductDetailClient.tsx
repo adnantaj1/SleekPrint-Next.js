@@ -49,17 +49,19 @@ export default function ProductDetailClient({
   };
 
   // ✅ Handle image deletion
-  const handleDeleteImage = async (imageId: number) => {
+  const handleDeleteImage = async (imageId: number, imageUrl: string) => {
     if (confirm("Are you sure you want to delete this image?")) {
       try {
-        const response = await fetch(`/api/products/images/${imageId}`, {
+        // ✅ Send DELETE request to `/api/upload`
+        const response = await fetch(`/api/upload`, {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageId, imageUrl }), // ✅ Send both `imageId` & `imageUrl`
         });
 
         if (response.ok) {
           setToast({ message: "Image deleted successfully", type: "success" });
-          // Refresh the page to reflect the changes
-          window.location.reload();
+          window.location.reload(); // ✅ Refresh UI
         } else {
           setToast({ message: "Failed to delete image", type: "error" });
         }
@@ -91,7 +93,7 @@ export default function ProductDetailClient({
               />
               {/* ✅ Delete Image Button */}
               <button
-                onClick={() => handleDeleteImage(image.id)}
+                onClick={() => handleDeleteImage(image.id, image.imageUrl)}
                 className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 🗑️

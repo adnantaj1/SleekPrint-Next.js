@@ -13,12 +13,21 @@ export class ProductService {
     if (!product) throw new Error("Product not found");
 
     const images = await ProductRepository.getProductImages(id);
-    return { ...product, images }; // Combine product, category, and images
+
+    return {
+      ...product,
+      images,
+      categoryId: product.category?.id || 0, // ✅ Ensure categoryId exists
+    };
   }
 
   // ✅ Fetch product images by product ID
   static async getProductImages(productId: number) {
     return await ProductRepository.getProductImages(productId);
+  }
+  // ✅ Fetch product images by Image ID
+  static async getProductImageById(imageId: number) {
+    return await ProductRepository.getProductImageById(imageId);
   }
 
   // Add a new product
@@ -34,14 +43,15 @@ export class ProductService {
   // Update a product
   static async updateProduct(
     id: number,
-    productData: ProductInput,
-    imageUrls: string[]
+    updatedData: Record<string, any>,
+    newImageUrls: string[]
   ) {
-    await ProductRepository.updateProduct(id, productData);
-    await ProductRepository.addProductImages(id, imageUrls);
-    return id;
-  }
+    await ProductRepository.updateProduct(id, updatedData);
 
+    if (newImageUrls.length > 0) {
+      await ProductRepository.addProductImages(id, newImageUrls);
+    }
+  }
   // Delete a product
   static async deleteProduct(id: number) {
     return await ProductRepository.deleteProduct(id);

@@ -88,4 +88,47 @@ export class ProductController {
       return NextResponse.json({ error: handleError(error) }, { status: 500 });
     }
   }
+
+  // ✅ Delete a product image
+  static async deleteProductImage(
+    req: Request,
+    { params }: { params: { id: string } }
+  ) {
+    try {
+      const imageId = Number(params.id);
+      if (isNaN(imageId)) {
+        return NextResponse.json(
+          { error: "Invalid image ID" },
+          { status: 400 }
+        );
+      }
+
+      // ✅ Fetch the image URL before deletion
+      const image = await ProductService.getProductImageById(imageId);
+      if (!image) {
+        return NextResponse.json({ error: "Image not found" }, { status: 404 });
+      }
+
+      // ✅ Call `/api/upload` to delete both storage & DB record
+      const deleteResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageId, imageUrl: image.imageUrl }),
+        }
+      );
+
+      if (!deleteResponse.ok) {
+        return NextResponse.json(
+          { error: "Failed to delete file" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    }
+  }
 }
