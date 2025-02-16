@@ -1,42 +1,26 @@
-"use client";
-import { useState, useEffect } from "react";
-import { Product } from "@/lib/db/schema";
 import Link from "next/link";
 import ImageSlider from "../ui/ImageSlider";
+import { Product } from "@/lib/db/schema";
+
+type ProductWithImages = Product & {
+  images: { id: number; imageUrl: string }[];
+};
 
 type ProductCardProps = {
-  product: Product;
+  product: ProductWithImages;
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const res = await fetch(`/api/products/${product.id}/images`);
-        if (res.ok) {
-          const data = await res.json();
-          setImageUrls(data.map((img: { imageUrl: string }) => img.imageUrl));
-        }
-      } catch (error) {
-        console.error("Failed to fetch images:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchImages();
-  }, [product.id]);
-
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* ✅ Image Slider Section */}
       <div className="relative w-full h-48">
-        {isLoading ? (
-          <div className="w-full h-full bg-gray-200 animate-pulse"></div>
+        {product.images && product.images.length > 0 ? (
+          <ImageSlider images={product.images.map((img) => img.imageUrl)} />
         ) : (
-          <ImageSlider images={imageUrls} />
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-500">No Image</span>
+          </div>
         )}
       </div>
 

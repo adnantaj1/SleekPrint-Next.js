@@ -9,11 +9,7 @@ export class ProductService {
 
   // Get product details (with images and category)
   static async getProductDetails(id: number) {
-    const product = await ProductRepository.getProductById(id);
-    if (!product) throw new Error("Product not found");
-
-    const images = await ProductRepository.getProductImages(id);
-    return { ...product, images }; // Combine product, category, and images
+    return await ProductRepository.getProductWithDetails(id);
   }
 
   // ✅ Fetch product images by product ID

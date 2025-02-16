@@ -8,9 +8,82 @@ import {
 import { eq } from "drizzle-orm";
 
 export class ProductRepository {
-  // Get all products
   static async getAllProducts() {
-    return await db.select().from(products);
+    // Fetch products with category
+    const productResults = await db
+      .select({
+        id: products.id,
+        title: products.title,
+        description: products.description,
+        price: products.price,
+        articleNumber: products.articleNumber,
+        categoryId: products.categoryId,
+        createdAt: products.createdAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+        },
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id));
+
+    // Fetch all images
+    const imageResults = await db
+      .select({
+        id: productImages.id,
+        productId: productImages.productId,
+        imageUrl: productImages.imageUrl,
+      })
+      .from(productImages);
+
+    // ✅ Merge products with their images
+    const productsWithImages = productResults.map((product) => ({
+      ...product,
+      images: imageResults
+        .filter((img) => img.productId === product.id)
+        .map((img) => ({ id: img.id, imageUrl: img.imageUrl })),
+    }));
+
+    return productsWithImages;
+  }
+
+  //Get Product with category and images
+  static async getProductWithDetails(id: number) {
+    // ✅ Fetch Product + Category
+    const result = await db
+      .select({
+        id: products.id,
+        title: products.title,
+        description: products.description,
+        price: products.price,
+        articleNumber: products.articleNumber,
+        categoryId: products.categoryId,
+        category: {
+          id: categories.id,
+          name: categories.name,
+        },
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.id, id))
+      .execute();
+
+    if (result.length === 0) return null;
+
+    const product = result[0];
+
+    // ✅ Fetch Product Images separately
+    const images = await db
+      .select({
+        id: productImages.id,
+        imageUrl: productImages.imageUrl,
+      })
+      .from(productImages)
+      .where(eq(productImages.productId, id))
+      .execute();
+
+    // ✅ Combine Product + Images
+    return { ...product, images };
   }
 
   // Get product by ID with category

@@ -1,4 +1,4 @@
-"use client"; // Client Component
+"use client";
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { Product } from "@/lib/db/schema";
@@ -9,20 +9,37 @@ type ProductListProps = {
 
 export default function ProductList({ products }: ProductListProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sortOption, setSortOption] = useState("name"); // Default sort by name
+  const [sortOption, setSortOption] = useState("name");
   const [filteredProducts, setFilteredProducts] = useState(products);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    []
+  );
 
+  // ✅ Fetch categories dynamically
   useEffect(() => {
-    let filtered = products;
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (!response.ok) throw new Error("Failed to fetch categories");
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("🔥 Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
-    // Filter by category
+  // ✅ Filter & Sort Products
+  useEffect(() => {
+    let filtered = [...products];
+
     if (categoryFilter !== "all") {
       filtered = filtered.filter(
         (product) => product.categoryId === Number(categoryFilter)
       );
     }
 
-    // Sort products
     if (sortOption === "name") {
       filtered.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortOption === "price") {
@@ -50,9 +67,11 @@ export default function ProductList({ products }: ProductListProps) {
             className="border p-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
           >
             <option value="all">All Categories</option>
-            <option value="1">T-Shirts</option>
-            <option value="2">Mugs</option>
-            <option value="3">Bags</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
           </select>
         </div>
 

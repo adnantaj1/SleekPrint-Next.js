@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Alert from "@/app/components/ui/Alert";
 import Link from "next/link";
+import Image from "next/image"; // ✅ Import next/image
 
 type ProductDetailClientProps = {
   product: {
@@ -36,8 +37,7 @@ export default function ProductDetailClient({
             message: "Product deleted successfully",
             type: "success",
           });
-          // Redirect to the products list page after deletion
-          window.location.href = "/admin/products";
+          window.location.href = "/admin/products"; // ✅ Redirect to products list
         } else {
           setToast({ message: "Failed to delete product", type: "error" });
         }
@@ -52,11 +52,10 @@ export default function ProductDetailClient({
   const handleDeleteImage = async (imageId: number, imageUrl: string) => {
     if (confirm("Are you sure you want to delete this image?")) {
       try {
-        // ✅ Send DELETE request to `/api/upload`
         const response = await fetch(`/api/upload`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageId, imageUrl }), // ✅ Send both `imageId` & `imageUrl`
+          body: JSON.stringify({ imageId, imageUrl }),
         });
 
         if (response.ok) {
@@ -79,17 +78,19 @@ export default function ProductDetailClient({
 
       <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
 
-      {/* ✅ Image Carousel / Grid */}
+      {/* ✅ Image Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         {product.images.length > 0 ? (
           product.images.map((image) => (
             <div key={image.id} className="relative group">
-              <img
+              {/* ✅ Use next/image for better optimization */}
+              <Image
                 src={image.imageUrl}
                 alt={product.title}
                 width={200}
                 height={200}
                 className="w-full h-40 object-cover rounded shadow"
+                layout="intrinsic"
               />
               {/* ✅ Delete Image Button */}
               <button

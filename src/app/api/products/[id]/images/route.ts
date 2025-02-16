@@ -8,7 +8,9 @@ export async function GET(
 ) {
   try {
     const productId = Number(params.id);
-    if (isNaN(productId)) {
+
+    // ✅ Ensure productId is valid
+    if (!productId || isNaN(productId)) {
       return NextResponse.json(
         { error: "Invalid product ID" },
         { status: 400 }
